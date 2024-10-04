@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react/prop-types */
+import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 
 import Header from './Header';
@@ -6,26 +7,46 @@ import Table from './Table';
 import Add from './Add';
 import Edit from './Edit';
 
-import { employeesData } from '../../data';
+// import { employeesData } from '../../data';
+import { collection, getDocs } from 'firebase/firestore';
+import {db} from "../../config/firestore";
 
 const Dashboard = ({ setIsAuthenticated }) => {
-  const [employees, setEmployees] = useState(employeesData);
+  const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  const getEmployees = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'employees'));
+      
+      const tempEmployees = querySnapshot.docs.map((doc)=> ({id:doc.id, ...doc.data()}))
+
+      console.log('tempEmployees', tempEmployees);
+      // querySnapshot.forEach((doc) => {
+      //   console.log(doc.id, ' => ', doc.data());
+      // });
+
+      setEmployees(tempEmployees);
+    } catch (error) {
+      console.error("Error fetching employees: ", error);
+    }
+  };
+
   useEffect(() => {
+    getEmployees();
     // TODO: create getEmployees function and call it here
   }, []);
 
-  const handleEdit = id => {
-    const [employee] = employees.filter(employee => employee.id === id);
+  const handleEdit = (id) => {
+    const [employee] = employees.filter((employee) => employee.id === id);
 
     setSelectedEmployee(employee);
     setIsEditing(true);
   };
 
-  const handleDelete = id => {
+  const handleDelete = (id) => {
     Swal.fire({
       icon: 'warning',
       title: 'Are you sure?',
@@ -33,9 +54,9 @@ const Dashboard = ({ setIsAuthenticated }) => {
       showCancelButton: true,
       confirmButtonText: 'Yes, delete it!',
       cancelButtonText: 'No, cancel!',
-    }).then(result => {
+    }).then((result) => {
       if (result.value) {
-        const [employee] = employees.filter(employee => employee.id === id);
+        const [employee] = employees.filter((employee) => employee.id === id);
 
         // TODO delete document
 
@@ -47,14 +68,16 @@ const Dashboard = ({ setIsAuthenticated }) => {
           timer: 1500,
         });
 
-        const employeesCopy = employees.filter(employee => employee.id !== id);
+        const employeesCopy = employees.filter(
+          (employee) => employee.id !== id
+        );
         setEmployees(employeesCopy);
       }
     });
   };
 
   return (
-    <div className="container">
+    <div className='container'>
       {!isAdding && !isEditing && (
         <>
           <Header
